@@ -1,0 +1,1507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>换汇计算器｜PWA</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --card-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: #374151;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --danger: #f87171;
+      --input: #0b1220;
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: radial-gradient(circle at top, #1e3a8a 0, #0f172a 45%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 920px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .content { padding: 22px 24px 24px; }
+
+    .group-title {
+      color: #cbd5e1;
+      font-size: 13px;
+      margin: 0 0 8px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      padding: 12px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.18s ease;
+    }
+
+    .tab.active {
+      border-color: rgba(56, 189, 248, 0.75);
+      color: white;
+      background: rgba(14, 116, 144, 0.32);
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.22);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--input);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      color: white;
+      background: transparent;
+      padding: 14px 14px;
+      font-size: 18px;
+    }
+
+    .unit {
+      min-width: 74px;
+      text-align: center;
+      color: var(--muted);
+      border-left: 1px solid rgba(148, 163, 184, 0.16);
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button { font-family: inherit; }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 14px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: 0.18s ease;
+    }
+
+    .btn-primary {
+      color: #00111a;
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .btn:hover, .tab:hover { transform: translateY(-1px); }
+
+    .result-box {
+      background: rgba(15, 23, 42, 0.72);
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .result-main {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .result-title {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
+    .grid { display: grid; gap: 10px; }
+
+    .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    .row span:first-child { color: var(--muted); }
+    .row strong { font-weight: 700; text-align: right; }
+
+    .formula {
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px dashed rgba(148, 163, 184, 0.26);
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .formula code {
+      color: #7dd3fc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: normal;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    .error {
+      display: none;
+      margin-top: 12px;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .toast {
+      min-height: 20px;
+      color: var(--accent-2);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .copy-hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 12px;
+      background: rgba(31, 41, 55, 0.42);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+
+    .live-rate-card {
+      background: rgba(2, 6, 23, 0.58);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .live-rate-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .live-rate-kicker {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .live-rate-pair {
+      color: #e0f2fe;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .live-badge {
+      color: #bae6fd;
+      background: rgba(14, 116, 144, 0.26);
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .live-rate-main {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .live-rate-main span {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .live-rate-main small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .live-rate-meta {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-bottom: 13px;
+    }
+
+    .live-rate-meta strong {
+      color: #dbeafe;
+      font-weight: 600;
+    }
+
+    .live-rate-meta a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+
+    .live-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-sm {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(31, 41, 55, 0.72);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn-sm:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .live-status {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      min-height: 18px;
+    }
+
+    .live-status.error-text { color: var(--danger); }
+
+    @media (max-width: 760px) {
+      body { padding: 14px; align-items: flex-start; }
+      .app { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+      .result-value { font-size: 26px; }
+    }
+
+
+    /* 手机端自适应增强：不改变计算逻辑，只优化小屏操作体验。 */
+    .panel,
+    .result-box,
+    .live-rate-card,
+    .formula,
+    .input-wrap {
+      min-width: 0;
+    }
+
+    @media (max-width: 920px) {
+      body {
+        align-items: flex-start;
+        padding: 18px;
+      }
+
+      .app {
+        max-width: 680px;
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        display: block;
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-bottom: max(14px, env(safe-area-inset-bottom));
+        padding-left: max(10px, env(safe-area-inset-left));
+      }
+
+      .app {
+        width: 100%;
+        max-width: 100%;
+        gap: 12px;
+      }
+
+      .panel {
+        border-radius: 18px;
+      }
+
+      .header {
+        padding: 18px 16px 14px;
+      }
+
+      h1 {
+        font-size: 20px;
+        line-height: 1.25;
+      }
+
+      .sub {
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .group-title,
+      label {
+        font-size: 12px;
+      }
+
+      .tabs {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .tab {
+        min-height: 44px;
+        padding: 10px 8px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.25;
+      }
+
+      .field {
+        margin-bottom: 13px;
+      }
+
+      .input-wrap {
+        border-radius: 12px;
+      }
+
+      input {
+        min-height: 48px;
+        padding: 13px 12px;
+        font-size: 16px;
+      }
+
+      .unit {
+        min-width: 64px;
+        padding: 0 8px;
+        font-size: 12px;
+      }
+
+      .actions,
+      .live-actions {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .btn,
+      .btn-sm {
+        min-height: 46px;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      .live-rate-card,
+      .result-box {
+        padding: 14px;
+        border-radius: 16px;
+      }
+
+      .live-rate-head {
+        align-items: flex-start;
+      }
+
+      .live-rate-main {
+        flex-wrap: wrap;
+      }
+
+      .live-rate-main span {
+        font-size: 28px;
+      }
+
+      .live-badge {
+        font-size: 11px;
+      }
+
+      .result-main {
+        margin-bottom: 13px;
+        padding-bottom: 12px;
+      }
+
+      .result-value {
+        font-size: 26px;
+        line-height: 1.2;
+      }
+
+      .row {
+        gap: 8px;
+        align-items: flex-start;
+      }
+
+      .row strong {
+        max-width: 55%;
+        text-align: right;
+        overflow-wrap: anywhere;
+      }
+
+      .formula {
+        padding: 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .note,
+      .live-rate-meta,
+      .live-status,
+      .toast,
+      .error {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .unit {
+        min-width: 58px;
+      }
+
+      .result-value {
+        font-size: 24px;
+      }
+
+      .row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .row strong {
+        max-width: 100%;
+        text-align: left;
+      }
+    }
+
+    @media (hover: none) {
+      .btn:hover,
+      .tab:hover {
+        transform: none;
+      }
+
+      .btn:active,
+      .tab:active {
+        transform: scale(0.99);
+      }
+    }
+
+
+    /* 手机端点击兼容：减少内置浏览器点击延迟和误触。 */
+    button,
+    .tab,
+    .btn,
+    .btn-sm {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+  </style>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="换汇计算器" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="header">
+        <h1>极简换汇计算器</h1>
+        <p class="sub">适用于 USD / CNY 与 USDT / USD 内部报价：支持正向换算、反向倒推、杂费、基准汇率、额外汇差，并联网显示 USD/CNH 离岸参考汇率；默认每 1 小时自动刷新一次。已优化手机浏览器自适应显示；复制结果默认为客户版，隐藏内部敏感明细。</p>
+      </div>
+
+      <div class="content">
+        <p class="group-title">换汇方向</p>
+        <div class="tabs" role="tablist" aria-label="换汇方向">
+          <button class="tab active" id="tabUsdToCny" type="button" data-mode="usd_to_cny">美金 → 人民币</button>
+          <button class="tab" id="tabCnyToUsd" type="button" data-mode="cny_to_usd">人民币 → 美金</button>
+          <button class="tab" id="tabUsdtToUsd" type="button" data-mode="usdt_to_usd">USDT → 美金</button>
+          <button class="tab" id="tabUsdToUsdt" type="button" data-mode="usd_to_usdt">美金 → USDT</button>
+        </div>
+
+        <p class="group-title">计算方式</p>
+        <div class="tabs" role="tablist" aria-label="计算方式">
+          <button class="tab active" id="tabForward" type="button" data-calc-type="forward">正向计算</button>
+          <button class="tab" id="tabReverse" type="button" data-calc-type="reverse">反向计算</button>
+        </div>
+
+        <div class="field">
+          <label id="amountLabel" for="amount">输入美金金额</label>
+          <div class="input-wrap">
+            <input id="amount" type="number" inputmode="decimal" min="0" step="0.01" value="1000" />
+            <span class="unit" id="amountUnit">USD</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="feeLabel" for="fee">杂费：计算前先扣除</label>
+          <div class="input-wrap">
+            <input id="fee" type="number" inputmode="decimal" min="0" step="0.01" value="0" />
+            <span class="unit" id="feeUnit">USD</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="baseRateLabel" for="baseRate">基准汇率：1 USD = ? CNY</label>
+          <div class="input-wrap">
+            <input id="baseRate" type="number" inputmode="decimal" min="0" step="0.0001" value="7.25" />
+            <span class="unit" id="baseRateUnit">CNY</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="spreadInputLabel" for="spread">额外汇差</label>
+          <div class="input-wrap">
+            <input id="spread" type="number" inputmode="decimal" min="0" step="0.0001" value="0.05" />
+            <span class="unit" id="spreadUnit">汇率点</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="copyBtn" type="button">复制客户版结果</button>
+          <button class="btn btn-secondary" id="resetBtn" type="button">清空重置</button>
+        </div>
+
+        <div class="copy-hint">复制内容为客户版：仅保留换汇方向、客户支付/到账金额、最终结算汇率或价格；自动隐藏基准汇率、离岸参考价、额外汇差、杂费、市场参考金额和汇差成本。</div>
+        <div class="error" id="errorBox"></div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="header">
+        <h1>计算结果</h1>
+        <p class="sub" id="directionText">当前方向：USD → CNY｜正向计算</p>
+      </div>
+
+      <div class="content">
+        <div class="live-rate-card" id="liveRateCard">
+          <div class="live-rate-head">
+            <div>
+              <div class="live-rate-kicker">国际离岸参考汇率</div>
+              <div class="live-rate-pair">USD/CNH</div>
+            </div>
+            <span class="live-badge" id="liveRateBadge">联网获取</span>
+          </div>
+
+          <div class="live-rate-main">
+            <span id="liveRateValue">--</span>
+            <small>CNH / 1 USD</small>
+          </div>
+
+          <div class="live-rate-meta">
+            <div>数据更新时间：<strong id="liveRateUpdated">--</strong></div>
+            <div>USD/CNY 参考：<strong id="liveCnyRate">--</strong></div>
+            <div>来源：<a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">Rates By Exchange Rate API</a></div>
+          </div>
+
+          <div class="live-actions">
+            <button class="btn-sm" id="refreshLiveRateBtn" type="button">刷新离岸汇率</button>
+            <button class="btn-sm" id="applyLiveRateBtn" type="button" disabled>填入基准汇率</button>
+          </div>
+
+          <div class="live-status" id="liveRateStatus">打开页面后自动获取最新可用 USD/CNH 参考价，并默认每 1 小时自动刷新一次；不影响手动计算。</div>
+        </div>
+
+        <div class="result-box">
+          <div class="result-main">
+            <div class="result-title" id="mainResultTitle">实际到账人民币</div>
+            <div class="result-value" id="mainResult">7,200.00 CNY</div>
+          </div>
+
+          <div class="grid">
+            <div class="row"><span id="rowInputLabel">输入金额</span><strong id="rowInputValue">1,000.00 USD</strong></div>
+            <div class="row"><span>扣除杂费</span><strong id="feeAmount">0.00 USD</strong></div>
+            <div class="row"><span id="netLabel">实际参与换汇金额</span><strong id="netAmount">1,000.00 USD</strong></div>
+            <div class="row"><span>实际结算汇率</span><strong id="actualRate">7.2000</strong></div>
+            <div class="row"><span id="marketLabel">市场参考金额</span><strong id="marketAmount">7,250.00 CNY</strong></div>
+            <div class="row"><span id="spreadLabel">汇差金额 / 成本</span><strong id="spreadAmount">50.00 CNY</strong></div>
+          </div>
+        </div>
+
+        <div class="formula" id="formulaBox">
+          <strong>公式：</strong><br />
+          <code>实际参与换汇金额 = 输入金额 - 杂费</code><br />
+          <code>实际结算汇率 = 基准汇率 - 额外汇差</code><br />
+          <code>到账人民币 = 实际参与换汇金额 × 实际结算汇率</code>
+        </div>
+
+        <div class="note">
+          说明：反向计算用于客户指定目标到账金额时倒推应付金额。杂费按付款币种计算，并在换汇前扣除。USD/CNH 为联网获取的离岸参考价，主要用于人民币换汇模式；USDT/USD 默认按 1 USDT≈1 USD 处理，可手动填写溢价或折价。本工具仅用于内部报价和快速计算，不代表官方汇率、银行承诺价格、稳定币实时盘口或实际成交价。
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var state = {
+    mode: 'usd_to_cny',
+    calcType: 'forward',
+    liveRate: null
+};
+var LIVE_RATE_ENDPOINT = 'https://open.er-api.com/v6/latest/USD';
+var LIVE_RATE_CACHE_KEY = 'exchange_calculator_usd_cnh_live_rate_v1';
+var LIVE_RATE_AUTO_REFRESH_MS = 60 * 60 * 1000;
+var liveRateFetching = false;
+var liveRateAutoRefreshTimer = null;
+var el = {
+    directionTabs: document.querySelectorAll('[data-mode]'),
+    calcTabs: document.querySelectorAll('[data-calc-type]'),
+    amount: document.getElementById('amount'),
+    fee: document.getElementById('fee'),
+    baseRate: document.getElementById('baseRate'),
+    spread: document.getElementById('spread'),
+    baseRateLabel: document.getElementById('baseRateLabel'),
+    baseRateUnit: document.getElementById('baseRateUnit'),
+    spreadInputLabel: document.getElementById('spreadInputLabel'),
+    spreadUnit: document.getElementById('spreadUnit'),
+    amountLabel: document.getElementById('amountLabel'),
+    amountUnit: document.getElementById('amountUnit'),
+    feeLabel: document.getElementById('feeLabel'),
+    feeUnit: document.getElementById('feeUnit'),
+    directionText: document.getElementById('directionText'),
+    mainResultTitle: document.getElementById('mainResultTitle'),
+    mainResult: document.getElementById('mainResult'),
+    rowInputLabel: document.getElementById('rowInputLabel'),
+    rowInputValue: document.getElementById('rowInputValue'),
+    feeAmount: document.getElementById('feeAmount'),
+    netLabel: document.getElementById('netLabel'),
+    netAmount: document.getElementById('netAmount'),
+    actualRate: document.getElementById('actualRate'),
+    marketLabel: document.getElementById('marketLabel'),
+    marketAmount: document.getElementById('marketAmount'),
+    spreadLabel: document.getElementById('spreadLabel'),
+    spreadAmount: document.getElementById('spreadAmount'),
+    formulaBox: document.getElementById('formulaBox'),
+    copyBtn: document.getElementById('copyBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    errorBox: document.getElementById('errorBox'),
+    toast: document.getElementById('toast'),
+    liveRateValue: document.getElementById('liveRateValue'),
+    liveRateUpdated: document.getElementById('liveRateUpdated'),
+    liveCnyRate: document.getElementById('liveCnyRate'),
+    liveRateBadge: document.getElementById('liveRateBadge'),
+    liveRateStatus: document.getElementById('liveRateStatus'),
+    refreshLiveRateBtn: document.getElementById('refreshLiveRateBtn'),
+    applyLiveRateBtn: document.getElementById('applyLiveRateBtn')
+};
+function toNumber(value) {
+    var n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+}
+function isUsdtMode(mode) {
+    if (mode === void 0) { mode = state.mode; }
+    return mode === 'usdt_to_usd' || mode === 'usd_to_usdt';
+}
+function isMinusSpreadMode(mode) {
+    if (mode === void 0) { mode = state.mode; }
+    return mode === 'usd_to_cny' || mode === 'usdt_to_usd';
+}
+function defaultAmountFor(mode, calcType) {
+    var _a;
+    if (mode === void 0) { mode = state.mode; }
+    if (calcType === void 0) { calcType = state.calcType; }
+    var defaults = {
+        usd_to_cny: { forward: '1000', reverse: '10000' },
+        cny_to_usd: { forward: '7200', reverse: '1000' },
+        usdt_to_usd: { forward: '1000', reverse: '1000' },
+        usd_to_usdt: { forward: '1000', reverse: '1000' }
+    };
+    return ((_a = defaults[mode]) === null || _a === void 0 ? void 0 : _a[calcType]) || '1000';
+}
+function defaultBaseRateFor(mode) {
+    if (mode === void 0) { mode = state.mode; }
+    if (isUsdtMode(mode))
+        return '1.0000';
+    return state.liveRate && Number.isFinite(state.liveRate.cnhRate) ? Number(state.liveRate.cnhRate).toFixed(4) : '7.25';
+}
+function defaultSpreadFor(mode) {
+    if (mode === void 0) { mode = state.mode; }
+    return isUsdtMode(mode) ? '0.0000' : '0.05';
+}
+function money(num, currency) {
+    if (!Number.isFinite(num))
+        return "0.00 ".concat(currency);
+    return "".concat(num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), " ").concat(currency);
+}
+function rate(num) {
+    if (!Number.isFinite(num))
+        return '0.0000';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}
+function liveTimeText(liveRate) {
+    if (!liveRate)
+        return '--';
+    if (liveRate.time_last_update_unix) {
+        return new Date(liveRate.time_last_update_unix * 1000).toLocaleString('zh-CN', { hour12: false });
+    }
+    return liveRate.time_last_update_utc || '--';
+}
+function setLiveStatus(message, isError) {
+    if (isError === void 0) { isError = false; }
+    el.liveRateStatus.textContent = message || '';
+    el.liveRateStatus.classList.toggle('error-text', Boolean(isError));
+}
+function nextAutoRefreshText() {
+    var nextTime = new Date(Date.now() + LIVE_RATE_AUTO_REFRESH_MS);
+    return nextTime.toLocaleString('zh-CN', { hour12: false });
+}
+function renderLiveRate(liveRate, statusText) {
+    if (statusText === void 0) { statusText = ''; }
+    state.liveRate = liveRate || null;
+    if (!liveRate) {
+        el.liveRateValue.textContent = '--';
+        el.liveRateUpdated.textContent = '--';
+        el.liveCnyRate.textContent = '--';
+        el.liveRateBadge.textContent = '未获取';
+        el.applyLiveRateBtn.disabled = true;
+        if (statusText)
+            setLiveStatus(statusText, true);
+        return;
+    }
+    el.liveRateValue.textContent = rate(liveRate.cnhRate);
+    el.liveRateUpdated.textContent = liveTimeText(liveRate);
+    el.liveCnyRate.textContent = Number.isFinite(liveRate.cnyRate) ? rate(liveRate.cnyRate) : '--';
+    el.liveRateBadge.textContent = liveRate.fromCache ? '缓存参考' : '最新可用';
+    el.applyLiveRateBtn.disabled = false;
+    setLiveStatus(statusText || '已获取 USD/CNH 离岸参考价。点击“填入基准汇率”可用于当前计算。');
+}
+function loadCachedLiveRate() {
+    try {
+        var raw = localStorage.getItem(LIVE_RATE_CACHE_KEY);
+        if (!raw)
+            return;
+        var cached = JSON.parse(raw);
+        if (!cached || !Number.isFinite(Number(cached.cnhRate)))
+            return;
+        cached.cnhRate = Number(cached.cnhRate);
+        cached.cnyRate = Number(cached.cnyRate);
+        cached.fromCache = true;
+        renderLiveRate(cached, '正在尝试刷新；当前先显示上次缓存的离岸参考价。');
+    }
+    catch (err) {
+        // 缓存不可用时忽略，不影响主计算器。
+    }
+}
+function fetchLiveRate() {
+    return __awaiter(this, arguments, void 0, function (trigger) {
+        var isAuto, isInitial, controller, timeoutId, fetchOptions, response, data, cnhRate, cnyRate, liveRate, refreshText, err_1, fallback;
+        var _a, _b;
+        if (trigger === void 0) { trigger = 'manual'; }
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    if (liveRateFetching)
+                        return [2 /*return*/];
+                    liveRateFetching = true;
+                    isAuto = trigger === 'auto';
+                    isInitial = trigger === 'initial';
+                    setLiveStatus(isAuto ? '正在按 1 小时周期自动刷新 USD/CNH 离岸参考价……' : '正在获取 USD/CNH 离岸参考价……');
+                    el.refreshLiveRateBtn.disabled = true;
+                    controller = null;
+                    timeoutId = null;
+                    _c.label = 1;
+                case 1:
+                    _c.trys.push([1, 4, 5, 6]);
+                    fetchOptions = {
+                        method: 'GET',
+                        cache: 'no-store'
+                    };
+                    if (typeof AbortController !== 'undefined') {
+                        controller = new AbortController();
+                        timeoutId = setTimeout(function () { return controller.abort(); }, 9000);
+                        fetchOptions.signal = controller.signal;
+                    }
+                    return [4 /*yield*/, fetch(LIVE_RATE_ENDPOINT, fetchOptions)];
+                case 2:
+                    response = _c.sent();
+                    if (!response.ok) {
+                        throw new Error("HTTP ".concat(response.status));
+                    }
+                    return [4 /*yield*/, response.json()];
+                case 3:
+                    data = _c.sent();
+                    cnhRate = Number((_a = data === null || data === void 0 ? void 0 : data.rates) === null || _a === void 0 ? void 0 : _a.CNH);
+                    cnyRate = Number((_b = data === null || data === void 0 ? void 0 : data.rates) === null || _b === void 0 ? void 0 : _b.CNY);
+                    if ((data === null || data === void 0 ? void 0 : data.result) !== 'success' || !Number.isFinite(cnhRate) || cnhRate <= 0) {
+                        throw new Error('接口未返回有效的 USD/CNH 汇率');
+                    }
+                    liveRate = {
+                        cnhRate: cnhRate,
+                        cnyRate: cnyRate,
+                        base_code: data.base_code || 'USD',
+                        time_last_update_unix: data.time_last_update_unix || null,
+                        time_last_update_utc: data.time_last_update_utc || '',
+                        time_next_update_utc: data.time_next_update_utc || '',
+                        fetched_at: Date.now(),
+                        fromCache: false
+                    };
+                    try {
+                        localStorage.setItem(LIVE_RATE_CACHE_KEY, JSON.stringify(liveRate));
+                    }
+                    catch (err) {
+                        // localStorage 失败不影响显示。
+                    }
+                    refreshText = isInitial ? '已获取 USD/CNH 离岸参考价。' : (isAuto ? '已按 1 小时周期自动刷新 USD/CNH 离岸参考价。' : '已手动刷新 USD/CNH 离岸参考价。');
+                    renderLiveRate(liveRate, "".concat(refreshText, " \u4E0B\u6B21\u81EA\u52A8\u5237\u65B0\u7EA6\u5728\uFF1A").concat(nextAutoRefreshText(), "\u3002\u514D\u8D39\u6570\u636E\u6E90\u901A\u5E38\u4E0D\u662F\u79D2\u7EA7\u62A5\u4EF7\uFF0C\u5B9E\u9645\u6210\u4EA4\u4ECD\u4EE5\u4F60\u7684\u7ED3\u7B97\u4EF7\u4E3A\u51C6\u3002"));
+                    return [3 /*break*/, 6];
+                case 4:
+                    err_1 = _c.sent();
+                    fallback = state.liveRate;
+                    if (fallback) {
+                        fallback.fromCache = true;
+                        renderLiveRate(fallback, "\u5F53\u524D\u7F51\u7EDC\u6216\u63A5\u53E3\u4E0D\u53EF\u7528\uFF0C\u5DF2\u7EE7\u7EED\u663E\u793A\u7F13\u5B58\u6C47\u7387\uFF1B\u7CFB\u7EDF\u5C06\u5728\u7EA6 ".concat(nextAutoRefreshText(), " \u518D\u6B21\u81EA\u52A8\u5237\u65B0\uFF0C\u8BA1\u7B97\u5668\u4ECD\u53EF\u624B\u52A8\u8F93\u5165\u57FA\u51C6\u6C47\u7387\u3002"));
+                    }
+                    else {
+                        renderLiveRate(null, "\u6682\u65F6\u65E0\u6CD5\u83B7\u53D6\u79BB\u5CB8\u53C2\u8003\u6C47\u7387\u3002\u7CFB\u7EDF\u5C06\u5728\u7EA6 ".concat(nextAutoRefreshText(), " \u518D\u6B21\u81EA\u52A8\u5237\u65B0\uFF1B\u4E5F\u53EF\u4EE5\u624B\u52A8\u8F93\u5165\u57FA\u51C6\u6C47\u7387\u3002"));
+                    }
+                    return [3 /*break*/, 6];
+                case 5:
+                    if (timeoutId)
+                        clearTimeout(timeoutId);
+                    el.refreshLiveRateBtn.disabled = false;
+                    liveRateFetching = false;
+                    return [7 /*endfinally*/];
+                case 6: return [2 /*return*/];
+            }
+        });
+    });
+}
+function startLiveRateAutoRefresh() {
+    if (liveRateAutoRefreshTimer) {
+        clearInterval(liveRateAutoRefreshTimer);
+    }
+    liveRateAutoRefreshTimer = setInterval(function () {
+        fetchLiveRate('auto');
+    }, LIVE_RATE_AUTO_REFRESH_MS);
+}
+function applyLiveRateToBase() {
+    if (isUsdtMode()) {
+        setLiveStatus('USD/CNH 离岸参考价只适用于人民币换汇模式；USDT/USD 请按实际成交溢价或折价手动填写。', true);
+        return;
+    }
+    if (!state.liveRate || !Number.isFinite(state.liveRate.cnhRate)) {
+        setLiveStatus('暂无可用 USD/CNH 离岸参考价，不能填入基准汇率。', true);
+        return;
+    }
+    el.baseRate.value = Number(state.liveRate.cnhRate).toFixed(4);
+    calculate();
+    el.toast.textContent = '已将 USD/CNH 离岸参考价填入基准汇率。';
+}
+function showError(message) {
+    el.errorBox.textContent = message;
+    el.errorBox.style.display = message ? 'block' : 'none';
+}
+function getActualRate(baseRate, spread) {
+    return isMinusSpreadMode() ? baseRate - spread : baseRate + spread;
+}
+function calculate() {
+    var amount = toNumber(el.amount.value);
+    var fee = toNumber(el.fee.value);
+    var baseRate = toNumber(el.baseRate.value);
+    var spread = toNumber(el.spread.value);
+    el.toast.textContent = '';
+    if (amount < 0 || fee < 0 || baseRate <= 0 || spread < 0) {
+        showError('请检查输入：金额和杂费不能为负数，基准汇率 / 基准价格必须大于 0，额外汇差 / 价差不能为负数。');
+        return null;
+    }
+    var actualRate = getActualRate(baseRate, spread);
+    if (actualRate <= 0) {
+        showError('额外汇差 / 价差不能大于或等于基准汇率 / 基准价格，否则实际结算汇率无效。');
+        return null;
+    }
+    if (state.calcType === 'forward' && fee > amount) {
+        showError('杂费不能大于输入金额，否则无法计算。');
+        return null;
+    }
+    var result;
+    if (state.mode === 'usd_to_cny' && state.calcType === 'forward') {
+        var netUsd = amount - fee;
+        var finalCny = netUsd * actualRate;
+        var marketCny = netUsd * baseRate;
+        var spreadCny = marketCny - finalCny;
+        result = {
+            direction: 'USD → CNY',
+            calcTypeText: '正向计算',
+            inputLabel: '输入美金金额',
+            input: money(amount, 'USD'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USD'),
+            netLabel: '实际参与换汇金额',
+            net: money(netUsd, 'USD'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '实际到账人民币',
+            main: money(finalCny, 'CNY'),
+            marketLabel: '市场参考人民币',
+            market: money(marketCny, 'CNY'),
+            spreadLabel: '汇差金额',
+            spreadAmount: money(spreadCny, 'CNY'),
+            formula: '<strong>公式：</strong><br /><code>实际参与换汇金额 = 输入美金金额 - 杂费</code><br /><code>实际结算汇率 = 基准汇率 - 额外汇差</code><br /><code>到账人民币 = 实际参与换汇金额 × 实际结算汇率</code>'
+        };
+    }
+    if (state.mode === 'cny_to_usd' && state.calcType === 'forward') {
+        var netCny = amount - fee;
+        var finalUsd = netCny / actualRate;
+        var marketUsd = netCny / baseRate;
+        var spreadUsd = marketUsd - finalUsd;
+        result = {
+            direction: 'CNY → USD',
+            calcTypeText: '正向计算',
+            inputLabel: '输入人民币金额',
+            input: money(amount, 'CNY'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'CNY'),
+            netLabel: '实际参与换汇金额',
+            net: money(netCny, 'CNY'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '实际到账美金',
+            main: money(finalUsd, 'USD'),
+            marketLabel: '市场参考美金',
+            market: money(marketUsd, 'USD'),
+            spreadLabel: '汇差成本',
+            spreadAmount: money(spreadUsd, 'USD'),
+            formula: '<strong>公式：</strong><br /><code>实际参与换汇金额 = 输入人民币金额 - 杂费</code><br /><code>实际结算汇率 = 基准汇率 + 额外汇差</code><br /><code>到账美金 = 实际参与换汇金额 ÷ 实际结算汇率</code>'
+        };
+    }
+    if (state.mode === 'usd_to_cny' && state.calcType === 'reverse') {
+        var targetCny = amount;
+        var netUsdNeeded = targetCny / actualRate;
+        var totalUsdPay = netUsdNeeded + fee;
+        var marketUsdNeeded = targetCny / baseRate;
+        var marketTotalUsd = marketUsdNeeded + fee;
+        var spreadUsdCost = netUsdNeeded - marketUsdNeeded;
+        result = {
+            direction: 'USD → CNY',
+            calcTypeText: '反向计算',
+            inputLabel: '目标到账人民币',
+            input: money(targetCny, 'CNY'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USD'),
+            netLabel: '扣费后实际换汇本金',
+            net: money(netUsdNeeded, 'USD'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '需要支付美金',
+            main: money(totalUsdPay, 'USD'),
+            marketLabel: '市场参考需付美金',
+            market: money(marketTotalUsd, 'USD'),
+            spreadLabel: '汇差成本',
+            spreadAmount: money(spreadUsdCost, 'USD'),
+            formula: '<strong>公式：</strong><br /><code>实际结算汇率 = 基准汇率 - 额外汇差</code><br /><code>扣费后实际换汇本金 = 目标到账人民币 ÷ 实际结算汇率</code><br /><code>需要支付美金 = 扣费后实际换汇本金 + 杂费</code>'
+        };
+    }
+    if (state.mode === 'cny_to_usd' && state.calcType === 'reverse') {
+        var targetUsd = amount;
+        var netCnyNeeded = targetUsd * actualRate;
+        var totalCnyPay = netCnyNeeded + fee;
+        var marketCnyNeeded = targetUsd * baseRate;
+        var marketTotalCny = marketCnyNeeded + fee;
+        var spreadCnyCost = netCnyNeeded - marketCnyNeeded;
+        result = {
+            direction: 'CNY → USD',
+            calcTypeText: '反向计算',
+            inputLabel: '目标到账美金',
+            input: money(targetUsd, 'USD'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'CNY'),
+            netLabel: '扣费后实际换汇本金',
+            net: money(netCnyNeeded, 'CNY'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '需要支付人民币',
+            main: money(totalCnyPay, 'CNY'),
+            marketLabel: '市场参考需付人民币',
+            market: money(marketTotalCny, 'CNY'),
+            spreadLabel: '汇差成本',
+            spreadAmount: money(spreadCnyCost, 'CNY'),
+            formula: '<strong>公式：</strong><br /><code>实际结算汇率 = 基准汇率 + 额外汇差</code><br /><code>扣费后实际换汇本金 = 目标到账美金 × 实际结算汇率</code><br /><code>需要支付人民币 = 扣费后实际换汇本金 + 杂费</code>'
+        };
+    }
+    if (state.mode === 'usdt_to_usd' && state.calcType === 'forward') {
+        var netUsdt = amount - fee;
+        var finalUsd = netUsdt * actualRate;
+        var marketUsd = netUsdt * baseRate;
+        var spreadUsd = marketUsd - finalUsd;
+        result = {
+            direction: 'USDT → USD',
+            calcTypeText: '正向计算',
+            inputLabel: '输入 USDT 数量',
+            input: money(amount, 'USDT'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USDT'),
+            netLabel: '实际参与兑换数量',
+            net: money(netUsdt, 'USDT'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '实际到账美金',
+            main: money(finalUsd, 'USD'),
+            marketLabel: '市场参考美金',
+            market: money(marketUsd, 'USD'),
+            spreadLabel: '价差金额',
+            spreadAmount: money(spreadUsd, 'USD'),
+            formula: '<strong>公式：</strong><br /><code>实际参与兑换数量 = 输入 USDT 数量 - 杂费</code><br /><code>实际结算价格 = USDT/USD 基准价 - 额外价差</code><br /><code>到账美金 = 实际参与兑换数量 × 实际结算价格</code>'
+        };
+    }
+    if (state.mode === 'usd_to_usdt' && state.calcType === 'forward') {
+        var netUsd = amount - fee;
+        var finalUsdt = netUsd / actualRate;
+        var marketUsdt = netUsd / baseRate;
+        var spreadUsdt = marketUsdt - finalUsdt;
+        result = {
+            direction: 'USD → USDT',
+            calcTypeText: '正向计算',
+            inputLabel: '输入美金金额',
+            input: money(amount, 'USD'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USD'),
+            netLabel: '实际参与兑换金额',
+            net: money(netUsd, 'USD'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '实际到账 USDT',
+            main: money(finalUsdt, 'USDT'),
+            marketLabel: '市场参考 USDT',
+            market: money(marketUsdt, 'USDT'),
+            spreadLabel: '价差成本',
+            spreadAmount: money(spreadUsdt, 'USDT'),
+            formula: '<strong>公式：</strong><br /><code>实际参与兑换金额 = 输入美金金额 - 杂费</code><br /><code>实际结算价格 = USDT/USD 基准价 + 额外价差</code><br /><code>到账 USDT = 实际参与兑换金额 ÷ 实际结算价格</code>'
+        };
+    }
+    if (state.mode === 'usdt_to_usd' && state.calcType === 'reverse') {
+        var targetUsd = amount;
+        var netUsdtNeeded = targetUsd / actualRate;
+        var totalUsdtPay = netUsdtNeeded + fee;
+        var marketUsdtNeeded = targetUsd / baseRate;
+        var marketTotalUsdt = marketUsdtNeeded + fee;
+        var spreadUsdtCost = netUsdtNeeded - marketUsdtNeeded;
+        result = {
+            direction: 'USDT → USD',
+            calcTypeText: '反向计算',
+            inputLabel: '目标到账美金',
+            input: money(targetUsd, 'USD'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USDT'),
+            netLabel: '扣费后实际兑换数量',
+            net: money(netUsdtNeeded, 'USDT'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '需要支付 USDT',
+            main: money(totalUsdtPay, 'USDT'),
+            marketLabel: '市场参考需付 USDT',
+            market: money(marketTotalUsdt, 'USDT'),
+            spreadLabel: '价差成本',
+            spreadAmount: money(spreadUsdtCost, 'USDT'),
+            formula: '<strong>公式：</strong><br /><code>实际结算价格 = USDT/USD 基准价 - 额外价差</code><br /><code>扣费后实际兑换数量 = 目标到账美金 ÷ 实际结算价格</code><br /><code>需要支付 USDT = 扣费后实际兑换数量 + 杂费</code>'
+        };
+    }
+    if (state.mode === 'usd_to_usdt' && state.calcType === 'reverse') {
+        var targetUsdt = amount;
+        var netUsdNeeded = targetUsdt * actualRate;
+        var totalUsdPay = netUsdNeeded + fee;
+        var marketUsdNeeded = targetUsdt * baseRate;
+        var marketTotalUsd = marketUsdNeeded + fee;
+        var spreadUsdCost = netUsdNeeded - marketUsdNeeded;
+        result = {
+            direction: 'USD → USDT',
+            calcTypeText: '反向计算',
+            inputLabel: '目标到账 USDT',
+            input: money(targetUsdt, 'USDT'),
+            feeLabel: '扣除杂费',
+            fee: money(fee, 'USD'),
+            netLabel: '扣费后实际兑换金额',
+            net: money(netUsdNeeded, 'USD'),
+            baseRate: baseRate,
+            spread: spread,
+            actualRate: actualRate,
+            mainTitle: '需要支付美金',
+            main: money(totalUsdPay, 'USD'),
+            marketLabel: '市场参考需付美金',
+            market: money(marketTotalUsd, 'USD'),
+            spreadLabel: '价差成本',
+            spreadAmount: money(spreadUsdCost, 'USD'),
+            formula: '<strong>公式：</strong><br /><code>实际结算价格 = USDT/USD 基准价 + 额外价差</code><br /><code>扣费后实际兑换金额 = 目标到账 USDT × 实际结算价格</code><br /><code>需要支付美金 = 扣费后实际兑换金额 + 杂费</code>'
+        };
+    }
+    showError('');
+    render(result);
+    return result;
+}
+function render(result) {
+    el.directionText.textContent = "\u5F53\u524D\u65B9\u5411\uFF1A".concat(result.direction, "\uFF5C").concat(result.calcTypeText);
+    el.mainResultTitle.textContent = result.mainTitle;
+    el.mainResult.textContent = result.main;
+    el.rowInputLabel.textContent = result.inputLabel;
+    el.rowInputValue.textContent = result.input;
+    el.feeAmount.textContent = result.fee;
+    el.netLabel.textContent = result.netLabel;
+    el.netAmount.textContent = result.net;
+    el.actualRate.textContent = rate(result.actualRate);
+    el.marketLabel.textContent = result.marketLabel;
+    el.marketAmount.textContent = result.market;
+    el.spreadLabel.textContent = result.spreadLabel;
+    el.spreadAmount.textContent = result.spreadAmount;
+    el.formulaBox.innerHTML = result.formula;
+}
+function updateLabels() {
+    var isReverse = state.calcType === 'reverse';
+    eachNode(el.directionTabs, function (tab) { tab.classList.toggle('active', tab.getAttribute('data-mode') === state.mode); });
+    eachNode(el.calcTabs, function (tab) { tab.classList.toggle('active', tab.getAttribute('data-calc-type') === state.calcType); });
+    if (state.mode === 'usd_to_cny') {
+        el.baseRateLabel.textContent = '基准汇率：1 USD = ? CNY';
+        el.baseRateUnit.textContent = 'CNY';
+        el.spreadInputLabel.textContent = '额外汇差';
+        el.spreadUnit.textContent = '汇率点';
+        if (!isReverse) {
+            el.amountLabel.textContent = '输入美金金额';
+            el.amountUnit.textContent = 'USD';
+            el.feeLabel.textContent = '杂费：从美金金额中先扣除';
+            el.feeUnit.textContent = 'USD';
+        }
+        else {
+            el.amountLabel.textContent = '目标到账人民币';
+            el.amountUnit.textContent = 'CNY';
+            el.feeLabel.textContent = '杂费：由支付美金承担，计算前扣除';
+            el.feeUnit.textContent = 'USD';
+        }
+    }
+    if (state.mode === 'cny_to_usd') {
+        el.baseRateLabel.textContent = '基准汇率：1 USD = ? CNY';
+        el.baseRateUnit.textContent = 'CNY';
+        el.spreadInputLabel.textContent = '额外汇差';
+        el.spreadUnit.textContent = '汇率点';
+        if (!isReverse) {
+            el.amountLabel.textContent = '输入人民币金额';
+            el.amountUnit.textContent = 'CNY';
+            el.feeLabel.textContent = '杂费：从人民币金额中先扣除';
+            el.feeUnit.textContent = 'CNY';
+        }
+        else {
+            el.amountLabel.textContent = '目标到账美金';
+            el.amountUnit.textContent = 'USD';
+            el.feeLabel.textContent = '杂费：由支付人民币承担，计算前扣除';
+            el.feeUnit.textContent = 'CNY';
+        }
+    }
+    if (state.mode === 'usdt_to_usd') {
+        el.baseRateLabel.textContent = 'USDT/USD 基准价：1 USDT = ? USD';
+        el.baseRateUnit.textContent = 'USD';
+        el.spreadInputLabel.textContent = 'USDT/USD 额外价差';
+        el.spreadUnit.textContent = 'USD';
+        if (!isReverse) {
+            el.amountLabel.textContent = '输入 USDT 数量';
+            el.amountUnit.textContent = 'USDT';
+            el.feeLabel.textContent = '杂费：从 USDT 数量中先扣除';
+            el.feeUnit.textContent = 'USDT';
+        }
+        else {
+            el.amountLabel.textContent = '目标到账美金';
+            el.amountUnit.textContent = 'USD';
+            el.feeLabel.textContent = '杂费：由支付 USDT 承担，计算前扣除';
+            el.feeUnit.textContent = 'USDT';
+        }
+    }
+    if (state.mode === 'usd_to_usdt') {
+        el.baseRateLabel.textContent = 'USDT/USD 基准价：1 USDT = ? USD';
+        el.baseRateUnit.textContent = 'USD';
+        el.spreadInputLabel.textContent = 'USDT/USD 额外价差';
+        el.spreadUnit.textContent = 'USD';
+        if (!isReverse) {
+            el.amountLabel.textContent = '输入美金金额';
+            el.amountUnit.textContent = 'USD';
+            el.feeLabel.textContent = '杂费：从美金金额中先扣除';
+            el.feeUnit.textContent = 'USD';
+        }
+        else {
+            el.amountLabel.textContent = '目标到账 USDT';
+            el.amountUnit.textContent = 'USDT';
+            el.feeLabel.textContent = '杂费：由支付美金承担，计算前扣除';
+            el.feeUnit.textContent = 'USD';
+        }
+    }
+}
+function setMode(mode) {
+    var wasUsdt = isUsdtMode(state.mode);
+    var willUsdt = isUsdtMode(mode);
+    state.mode = mode;
+    el.amount.value = defaultAmountFor(state.mode, state.calcType);
+    if (wasUsdt !== willUsdt) {
+        el.baseRate.value = defaultBaseRateFor(state.mode);
+        el.spread.value = defaultSpreadFor(state.mode);
+    }
+    updateLabels();
+    calculate();
+}
+function setCalcType(calcType) {
+    state.calcType = calcType;
+    el.amount.value = defaultAmountFor(state.mode, state.calcType);
+    updateLabels();
+    calculate();
+}
+function settlementLine(result) {
+    if (isUsdtMode()) {
+        return "\u672C\u6B21\u7ED3\u7B97\u4EF7\u683C\uFF1A1 USDT = ".concat(rate(result.actualRate), " USD");
+    }
+    return "\u672C\u6B21\u7ED3\u7B97\u6C47\u7387\uFF1A1 USD = ".concat(rate(result.actualRate), " CNY");
+}
+function buildCopyText(result) {
+    var nowText = new Date().toLocaleString('zh-CN', { hour12: false });
+    var isReverse = state.calcType === 'reverse';
+    var paymentLine = isReverse ? "\u5BA2\u6237\u9700\u652F\u4ED8\uFF1A".concat(result.main) : "\u5BA2\u6237\u652F\u4ED8\uFF1A".concat(result.input);
+    var receiveLine = isReverse ? "\u5BA2\u6237\u76EE\u6807\u5230\u8D26\uFF1A".concat(result.input) : "\u9884\u8BA1\u5230\u8D26\uFF1A".concat(result.main);
+    return [
+        '换汇报价',
+        "\u6362\u6C47\u65B9\u5411\uFF1A".concat(result.direction),
+        paymentLine,
+        receiveLine,
+        settlementLine(result),
+        "\u62A5\u4EF7\u65F6\u95F4\uFF1A".concat(nowText),
+        '备注：以上为本次确认报价，实际到账以双方最终确认和实际结算为准。'
+    ].join('\n');
+}
+function copyResult() {
+    return __awaiter(this, void 0, void 0, function () {
+        var result, text, err_2, textarea;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    result = calculate();
+                    if (!result)
+                        return [2 /*return*/];
+                    text = buildCopyText(result);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, navigator.clipboard.writeText(text)];
+                case 2:
+                    _a.sent();
+                    el.toast.textContent = '客户版结果已复制，内部敏感明细已隐藏。';
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_2 = _a.sent();
+                    textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    el.toast.textContent = '客户版结果已复制，内部敏感明细已隐藏。';
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function reset() {
+    el.amount.value = defaultAmountFor(state.mode, state.calcType);
+    el.fee.value = '0';
+    el.baseRate.value = defaultBaseRateFor(state.mode);
+    el.spread.value = defaultSpreadFor(state.mode);
+    updateLabels();
+    calculate();
+    el.toast.textContent = '已恢复当前模式默认示例。';
+}
+function eachNode(list, callback) {
+    for (var i = 0; i < list.length; i += 1) {
+        callback(list[i], i);
+    }
+}
+function bindTap(target, handler) {
+    if (!target)
+        return;
+    target.addEventListener('click', function (event) {
+        handler(event);
+    }, false);
+    target.addEventListener('touchend', function (event) {
+        event.preventDefault();
+        handler(event);
+    }, false);
+}
+eachNode(el.directionTabs, function (tab) {
+    bindTap(tab, function () {
+        setMode(tab.getAttribute('data-mode'));
+    });
+});
+eachNode(el.calcTabs, function (tab) {
+    bindTap(tab, function () {
+        setCalcType(tab.getAttribute('data-calc-type'));
+    });
+});
+[el.amount, el.fee, el.baseRate, el.spread].forEach(function (input) { return input.addEventListener('input', calculate); });
+bindTap(el.copyBtn, copyResult);
+bindTap(el.resetBtn, reset);
+bindTap(el.refreshLiveRateBtn, function () { fetchLiveRate('manual'); });
+bindTap(el.applyLiveRateBtn, applyLiveRateToBase);
+updateLabels();
+calculate();
+loadCachedLiveRate();
+try {
+    fetchLiveRate('initial');
+    startLiveRateAutoRefresh();
+}
+catch (err) {
+    setLiveStatus('当前手机浏览器限制实时汇率功能，但本地计算和切换功能仍可使用。', true);
+}
+    </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function (err) {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
