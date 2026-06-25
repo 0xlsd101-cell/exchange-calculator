@@ -668,7 +668,7 @@
           <button class="btn btn-secondary" id="resetBtn" type="button">清空重置</button>
         </div>
 
-        <div class="copy-hint">复制内容为客户版：仅保留换汇方向、客户支付/到账金额、最终结算汇率或价格；自动隐藏基准汇率、离岸参考价、额外汇差、杂费、扣汇差后等值金额、市场参考金额和汇差成本。</div>
+        <div class="copy-hint">复制内容为客户版：仅保留换汇方向、客户支付/到账金额、最终结算汇率或价格；自动隐藏基准汇率、离岸参考价、额外汇差、杂费、到账金额按基准折算金额、市场参考金额和汇差成本。</div>
         <div class="error" id="errorBox"></div>
         <div class="toast" id="toast"></div>
       </div>
@@ -720,7 +720,7 @@
             <div class="row"><span>扣除杂费</span><strong id="feeAmount">0.00 USD</strong></div>
             <div class="row"><span id="netLabel">实际参与换汇金额</span><strong id="netAmount">1,000.00 USD</strong></div>
             <div class="row"><span>实际结算汇率</span><strong id="actualRate">7.2000</strong></div>
-            <div class="row"><span id="equivLabel">扣汇差后等值换汇金额</span><strong id="equivAmount">7,200.00 CNY</strong></div>
+            <div class="row"><span id="equivLabel">到账金额按基准折算</span><strong id="equivAmount">7,200.00 CNY</strong></div>
             <div class="row"><span id="marketLabel">市场参考金额</span><strong id="marketAmount">7,250.00 CNY</strong></div>
             <div class="row"><span id="spreadLabel">汇差金额 / 成本</span><strong id="spreadAmount">50.00 CNY</strong></div>
           </div>
@@ -1063,8 +1063,8 @@ function calculate() {
 
     if (state.mode === 'usd_to_cny' && state.calcType === 'forward') {
         var netUsd = amount - fee;
-        var equivCny = amount * actualRate;
         var finalCny = netUsd * actualRate;
+        var baseEquivalentUsd = finalCny / baseRate;
         var marketCny = netUsd * baseRate;
         var spreadCny = marketCny - finalCny;
         result = {
@@ -1081,19 +1081,19 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '实际到账人民币',
             main: money(finalCny, 'CNY'),
-            equivLabel: '扣汇差后等值人民币（未扣杂费）',
-            equivAmount: money(equivCny, 'CNY'),
+            equivLabel: '实际到账人民币按基准汇率折算美金',
+            equivAmount: money(baseEquivalentUsd, 'USD'),
             marketLabel: '市场参考人民币',
             market: money(marketCny, 'CNY'),
             spreadLabel: '汇差金额',
             spreadAmount: money(spreadCny, 'CNY'),
-            formula: '<strong>公式：</strong><br /><code>扣汇差后等值人民币 = 输入美金金额 × 实际结算汇率（未扣杂费）</code><br /><code>实际参与换汇金额 = 输入美金金额 - 杂费</code><br /><code>到账人民币 = 实际参与换汇金额 × 实际结算汇率</code>'
+            formula: '<strong>公式：</strong><br /><code>实际到账人民币 = (输入美金金额 - 杂费) × 实际结算汇率</code><br /><code>到账金额对应换汇金额 = 实际到账人民币 ÷ 基准汇率</code><br /><code>市场参考人民币 = 实际参与换汇金额 × 基准汇率</code>'
         };
     }
     else if (state.mode === 'cny_to_usd' && state.calcType === 'forward') {
         var netCny = amount - fee;
-        var equivUsd = amount / actualRate;
         var finalUsd = netCny / actualRate;
+        var baseEquivalentCny = finalUsd * baseRate;
         var marketUsd = netCny / baseRate;
         var spreadUsd = marketUsd - finalUsd;
         result = {
@@ -1110,22 +1110,22 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '实际到账美金',
             main: money(finalUsd, 'USD'),
-            equivLabel: '扣汇差后等值美金（未扣杂费）',
-            equivAmount: money(equivUsd, 'USD'),
+            equivLabel: '实际到账美金按基准汇率折算人民币',
+            equivAmount: money(baseEquivalentCny, 'CNY'),
             marketLabel: '市场参考美金',
             market: money(marketUsd, 'USD'),
             spreadLabel: '汇差成本',
             spreadAmount: money(spreadUsd, 'USD'),
-            formula: '<strong>公式：</strong><br /><code>扣汇差后等值美金 = 输入人民币金额 ÷ 实际结算汇率（未扣杂费）</code><br /><code>实际参与换汇金额 = 输入人民币金额 - 杂费</code><br /><code>到账美金 = 实际参与换汇金额 ÷ 实际结算汇率</code>'
+            formula: '<strong>公式：</strong><br /><code>实际到账美金 = (输入人民币金额 - 杂费) ÷ 实际结算汇率</code><br /><code>到账金额对应换汇金额 = 实际到账美金 × 基准汇率</code><br /><code>市场参考美金 = 实际参与换汇金额 ÷ 基准汇率</code>'
         };
     }
     else if (state.mode === 'usd_to_cny' && state.calcType === 'reverse') {
         var targetCny = amount;
         var netUsdNeeded = targetCny / actualRate;
         var totalUsdPay = netUsdNeeded + fee;
-        var marketUsdNeeded = targetCny / baseRate;
-        var marketTotalUsd = marketUsdNeeded + fee;
-        var spreadUsdCost = netUsdNeeded - marketUsdNeeded;
+        var baseEquivalentUsd = targetCny / baseRate;
+        var marketTotalUsd = baseEquivalentUsd + fee;
+        var spreadUsdCost = netUsdNeeded - baseEquivalentUsd;
         result = {
             direction: 'USD → CNY',
             calcTypeText: '反向计算',
@@ -1140,22 +1140,22 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '需要支付美金',
             main: money(totalUsdPay, 'USD'),
-            equivLabel: '扣汇差后等值需付美金（未加杂费）',
-            equivAmount: money(netUsdNeeded, 'USD'),
+            equivLabel: '目标到账人民币按基准汇率折算美金',
+            equivAmount: money(baseEquivalentUsd, 'USD'),
             marketLabel: '市场参考需付美金',
             market: money(marketTotalUsd, 'USD'),
             spreadLabel: '汇差成本',
             spreadAmount: money(spreadUsdCost, 'USD'),
-            formula: '<strong>公式：</strong><br /><code>扣汇差后等值需付美金 = 目标到账人民币 ÷ 实际结算汇率（未加杂费）</code><br /><code>需要支付美金 = 扣汇差后等值需付美金 + 杂费</code>'
+            formula: '<strong>公式：</strong><br /><code>需要支付美金 = 目标到账人民币 ÷ 实际结算汇率 + 杂费</code><br /><code>到账金额对应换汇金额 = 目标到账人民币 ÷ 基准汇率</code>'
         };
     }
     else if (state.mode === 'cny_to_usd' && state.calcType === 'reverse') {
         var targetUsd = amount;
         var netCnyNeeded = targetUsd * actualRate;
         var totalCnyPay = netCnyNeeded + fee;
-        var marketCnyNeeded = targetUsd * baseRate;
-        var marketTotalCny = marketCnyNeeded + fee;
-        var spreadCnyCost = netCnyNeeded - marketCnyNeeded;
+        var baseEquivalentCny = targetUsd * baseRate;
+        var marketTotalCny = baseEquivalentCny + fee;
+        var spreadCnyCost = netCnyNeeded - baseEquivalentCny;
         result = {
             direction: 'CNY → USD',
             calcTypeText: '反向计算',
@@ -1170,19 +1170,19 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '需要支付人民币',
             main: money(totalCnyPay, 'CNY'),
-            equivLabel: '扣汇差后等值需付人民币（未加杂费）',
-            equivAmount: money(netCnyNeeded, 'CNY'),
+            equivLabel: '目标到账美金按基准汇率折算人民币',
+            equivAmount: money(baseEquivalentCny, 'CNY'),
             marketLabel: '市场参考需付人民币',
             market: money(marketTotalCny, 'CNY'),
             spreadLabel: '汇差成本',
             spreadAmount: money(spreadCnyCost, 'CNY'),
-            formula: '<strong>公式：</strong><br /><code>扣汇差后等值需付人民币 = 目标到账美金 × 实际结算汇率（未加杂费）</code><br /><code>需要支付人民币 = 扣汇差后等值需付人民币 + 杂费</code>'
+            formula: '<strong>公式：</strong><br /><code>需要支付人民币 = 目标到账美金 × 实际结算汇率 + 杂费</code><br /><code>到账金额对应换汇金额 = 目标到账美金 × 基准汇率</code>'
         };
     }
     else if (state.mode === 'usdt_to_usd' && state.calcType === 'forward') {
         var netUsdt = amount - fee;
-        var equivUsd = amount * actualRate;
         var finalUsd = netUsdt * actualRate;
+        var baseEquivalentUsdt = finalUsd / baseRate;
         var marketUsd = netUsdt * baseRate;
         var spreadUsd = marketUsd - finalUsd;
         result = {
@@ -1199,19 +1199,19 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '实际到账美金',
             main: money(finalUsd, 'USD'),
-            equivLabel: '扣价差后等值美金（未扣杂费）',
-            equivAmount: money(equivUsd, 'USD'),
+            equivLabel: '实际到账美金按基准价格折算 USDT',
+            equivAmount: money(baseEquivalentUsdt, 'USDT'),
             marketLabel: '市场参考美金',
             market: money(marketUsd, 'USD'),
             spreadLabel: '价差金额',
             spreadAmount: money(spreadUsd, 'USD'),
-            formula: '<strong>公式：</strong><br /><code>扣价差后等值美金 = 输入 USDT 数量 × 实际结算价格（未扣杂费）</code><br /><code>实际参与兑换数量 = 输入 USDT 数量 - 杂费</code><br /><code>到账美金 = 实际参与兑换数量 × 实际结算价格</code>'
+            formula: '<strong>公式：</strong><br /><code>实际到账美金 = (输入 USDT 数量 - 杂费) × 实际结算价格</code><br /><code>到账金额对应兑换数量 = 实际到账美金 ÷ 基准价格</code>'
         };
     }
     else if (state.mode === 'usd_to_usdt' && state.calcType === 'forward') {
         var netUsd = amount - fee;
-        var equivUsdt = amount / actualRate;
         var finalUsdt = netUsd / actualRate;
+        var baseEquivalentUsd = finalUsdt * baseRate;
         var marketUsdt = netUsd / baseRate;
         var spreadUsdt = marketUsdt - finalUsdt;
         result = {
@@ -1228,22 +1228,22 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '实际到账 USDT',
             main: money(finalUsdt, 'USDT'),
-            equivLabel: '扣价差后等值 USDT（未扣杂费）',
-            equivAmount: money(equivUsdt, 'USDT'),
+            equivLabel: '实际到账 USDT 按基准价格折算美金',
+            equivAmount: money(baseEquivalentUsd, 'USD'),
             marketLabel: '市场参考 USDT',
             market: money(marketUsdt, 'USDT'),
             spreadLabel: '价差成本',
             spreadAmount: money(spreadUsdt, 'USDT'),
-            formula: '<strong>公式：</strong><br /><code>扣价差后等值 USDT = 输入美金金额 ÷ 实际结算价格（未扣杂费）</code><br /><code>实际参与兑换金额 = 输入美金金额 - 杂费</code><br /><code>到账 USDT = 实际参与兑换金额 ÷ 实际结算价格</code>'
+            formula: '<strong>公式：</strong><br /><code>实际到账 USDT = (输入美金金额 - 杂费) ÷ 实际结算价格</code><br /><code>到账金额对应兑换金额 = 实际到账 USDT × 基准价格</code>'
         };
     }
     else if (state.mode === 'usdt_to_usd' && state.calcType === 'reverse') {
         var targetUsd = amount;
         var netUsdtNeeded = targetUsd / actualRate;
         var totalUsdtPay = netUsdtNeeded + fee;
-        var marketUsdtNeeded = targetUsd / baseRate;
-        var marketTotalUsdt = marketUsdtNeeded + fee;
-        var spreadUsdtCost = netUsdtNeeded - marketUsdtNeeded;
+        var baseEquivalentUsdt = targetUsd / baseRate;
+        var marketTotalUsdt = baseEquivalentUsdt + fee;
+        var spreadUsdtCost = netUsdtNeeded - baseEquivalentUsdt;
         result = {
             direction: 'USDT → USD',
             calcTypeText: '反向计算',
@@ -1258,22 +1258,22 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '需要支付 USDT',
             main: money(totalUsdtPay, 'USDT'),
-            equivLabel: '扣价差后等值需付 USDT（未加杂费）',
-            equivAmount: money(netUsdtNeeded, 'USDT'),
+            equivLabel: '目标到账美金按基准价格折算 USDT',
+            equivAmount: money(baseEquivalentUsdt, 'USDT'),
             marketLabel: '市场参考需付 USDT',
             market: money(marketTotalUsdt, 'USDT'),
             spreadLabel: '价差成本',
             spreadAmount: money(spreadUsdtCost, 'USDT'),
-            formula: '<strong>公式：</strong><br /><code>扣价差后等值需付 USDT = 目标到账美金 ÷ 实际结算价格（未加杂费）</code><br /><code>需要支付 USDT = 扣价差后等值需付 USDT + 杂费</code>'
+            formula: '<strong>公式：</strong><br /><code>需要支付 USDT = 目标到账美金 ÷ 实际结算价格 + 杂费</code><br /><code>到账金额对应兑换数量 = 目标到账美金 ÷ 基准价格</code>'
         };
     }
     else if (state.mode === 'usd_to_usdt' && state.calcType === 'reverse') {
         var targetUsdt = amount;
         var netUsdNeeded = targetUsdt * actualRate;
         var totalUsdPay = netUsdNeeded + fee;
-        var marketUsdNeeded = targetUsdt * baseRate;
-        var marketTotalUsd = marketUsdNeeded + fee;
-        var spreadUsdCost = netUsdNeeded - marketUsdNeeded;
+        var baseEquivalentUsd = targetUsdt * baseRate;
+        var marketTotalUsd = baseEquivalentUsd + fee;
+        var spreadUsdCost = netUsdNeeded - baseEquivalentUsd;
         result = {
             direction: 'USD → USDT',
             calcTypeText: '反向计算',
@@ -1288,13 +1288,13 @@ function calculate() {
             actualRate: actualRate,
             mainTitle: '需要支付美金',
             main: money(totalUsdPay, 'USD'),
-            equivLabel: '扣价差后等值需付美金（未加杂费）',
-            equivAmount: money(netUsdNeeded, 'USD'),
+            equivLabel: '目标到账 USDT 按基准价格折算美金',
+            equivAmount: money(baseEquivalentUsd, 'USD'),
             marketLabel: '市场参考需付美金',
             market: money(marketTotalUsd, 'USD'),
             spreadLabel: '价差成本',
             spreadAmount: money(spreadUsdCost, 'USD'),
-            formula: '<strong>公式：</strong><br /><code>扣价差后等值需付美金 = 目标到账 USDT × 实际结算价格（未加杂费）</code><br /><code>需要支付美金 = 扣价差后等值需付美金 + 杂费</code>'
+            formula: '<strong>公式：</strong><br /><code>需要支付美金 = 目标到账 USDT × 实际结算价格 + 杂费</code><br /><code>到账金额对应兑换金额 = 目标到账 USDT × 基准价格</code>'
         };
     }
 
@@ -1302,6 +1302,7 @@ function calculate() {
     render(result);
     return result;
 }
+
 function render(result) {
     el.directionText.textContent = "\u5F53\u524D\u65B9\u5411\uFF1A".concat(result.direction, "\uFF5C").concat(result.calcTypeText);
     el.mainResultTitle.textContent = result.mainTitle;

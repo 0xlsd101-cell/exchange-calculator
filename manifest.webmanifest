@@ -1,7 +1,7 @@
 {
   "name": "极简换汇计算器",
   "short_name": "换汇计算器",
-  "description": "USD/CNY、USDT/USD 正反向换汇计算工具，支持杂费、汇差、等值金额、客户版复制和离岸汇率参考。",
+  "description": "USD/CNY、USDT/USD 正反向换汇计算工具，支持杂费、汇差、到账金额按基准折算、客户版复制和离岸汇率参考。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
